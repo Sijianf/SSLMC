@@ -34,8 +34,8 @@ out = SSLMC(Y = Y,
 ```
 
 - `Y`: The binary dataset to be completed. 
-- `K_init`: The column number of the latent space, use 20 or a larger value for general usage. 
-- `max_iter`: The maximum iteration number, you can change as 200 or 500 as needed. 
+- `K_init`: The column number of the latent space, use $20$ or a larger value for general usage. 
+- `max_iter`: The maximum iteration number, you can change as $200$ or $500$ as needed. 
 - `show_plot`: This is only for simulation study, set as `FALSE` in real data analysis. 
 - `eta`: The learning rate of the algorithm.  
-- `xi`: The confidence level for the observed values, use positive integers like 1,2,3,...,10 for a better performance.  
+- `xi`: The confidence level for the observed values, use positive integers like $1,2,3,...,10$ for a better performance.  
