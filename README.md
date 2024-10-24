@@ -38,4 +38,4 @@ out = SSLMC(Y = Y,
 - `max_iter`: The maximum iteration number, you can change as $200$ or $500$ as needed. 
 - `show_plot`: This is only for simulation study, set as `FALSE` in real data analysis. 
 - `eta`: The learning rate of the algorithm.  
-- `xi`: The confidence level for the observed values, use positive integers like $1,2,3,...,10$ for a better performance.  
+- `xi`: The confidence level for the observed values, use positive integers like $1,2,3,\cdots,10$ for a better performance.  
