@@ -29,7 +29,7 @@ out = SSLMC(Y = Y,
             IBP = 1, 
             show_plot = FALSE,
             eta = 0.001,
-            xi = 1
+            xi = 2
             )
 ```
 
