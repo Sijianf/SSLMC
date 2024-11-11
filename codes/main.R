@@ -88,59 +88,6 @@ get_lambdastar <- function(x, thetas, lambdas) {
 
 
 
-################################# Get the soft thresholding
-# soft_thresholding <- function(x, lambdastar, eta){
-# 
-#   if(x > lambdastar*eta){
-#     return(x - lambdastar*eta)
-#   }
-#   else{
-#     if(x < -lambdastar*eta){
-#       return(x + lambdastar*eta)
-#     }
-#     else{
-#       return(0)
-#     }
-#   }
-# 
-# }
-
-
-
-################################# Get the proximal
-# get_proximal <- function(Y, xi, A, B, U, V, vec_thetas, lambdas, eta){
-# 
-#   I = nrow(Y)
-#   J = ncol(Y)
-#   K = ncol(A)
-#   proximal_A = A
-#   proximal_B = B 
-# 
-#   H = (1+xi*Y-Y)/(1+exp(-U%*%A%*%t(B)%*%t(V)))
-# 
-#   dA = - xi*t(U)%*%Y%*%V%*%B + t(U)%*%H%*%V%*%B
-#   dB = - xi*t(V)%*%t(Y)%*%U%*%A + t(V)%*%t(H)%*%U%*%A
-#   
-#   for(k in 1:K){
-# 
-#     for(i in 1:I){
-#       lambdastar = get_lambdastar(x = A[i,k], thetas = vec_thetas[k], lambdas = lambdas)
-#       proximal_A[i,k] = soft_thresholding(x = A[i,k] - eta*dA[i,k], lambdastar, eta)
-#     }
-# 
-#     for(j in 1:J){
-#       lambdastar = get_lambdastar(x = B[j,k], thetas = vec_thetas[k], lambdas = lambdas)
-#       proximal_B[j,k] = soft_thresholding(x = B[j,k] - eta*dB[j,k], lambdastar, eta)
-#     }
-# 
-#   }
-# 
-#   return(list(proximal_A = proximal_A,
-#               proximal_B = proximal_B))
-# 
-# }
-
-
 
 ################################# Update the stick-breaking fractions
 get_thetas <- function(mat, a, b, tol = 0){
@@ -165,27 +112,28 @@ get_thetas <- function(mat, a, b, tol = 0){
 
 
 ################################# get the log likelihood
-get_logLikelihood <- function(Y, xi, A, B, tilde_thetas, thetas, tilde_lambdas, lambdas, tilde_alpha, tilde_beta, alpha, beta){
+get_logLikelihood <- function(Q, A, B, tilde_thetas, thetas, tilde_lambdas, lambdas, tilde_alpha, tilde_beta, alpha, beta){
 
-  I = nrow(Y)
-  J = ncol(Y)
+  I = nrow(Q)
+  J = ncol(Q)
 
   M = A%*%t(B)
 
-  out = sum(xi*Y * M) - sum((1 + xi*Y - Y) * log(1+exp(M))) - 
+  out = sum(log(get_logit(Q*M))) - 
     sum(get_lambdastar(x = A, thetas = tilde_thetas, lambdas = tilde_lambdas) * A) - 
     sum(get_lambdastar(x = B, thetas = thetas, lambdas = lambdas) * B) + 
     sum((tilde_alpha - 1) * log(tilde_thetas) + (tilde_beta - 1) * log(1 - tilde_thetas)) + 
     sum((alpha - 1) * log(thetas) + (beta - 1) * log(1 - thetas))
 
+  out = -2*sum(log(get_logit(Q*M)))+(log(I*J)*(1+sum(A!=0)+sum(B!=0)))
+  
   return(out)
-
 }
 
 
 
 ################################# Update AB
-SSLMC <- function(Y, A = NULL, B = NULL, xi = 1, 
+SSLMC <- function(Y, A = NULL, B = NULL, xi = 2, 
                   tilde_lambda_0 = 5, tilde_lambda_1 = 1,
                   lambda_0 = 5, lambda_1 = 1, method = "svd",
                   tilde_alpha = 1, tilde_beta = 1, alpha = 1, beta = 1, 
@@ -195,6 +143,9 @@ SSLMC <- function(Y, A = NULL, B = NULL, xi = 1,
   I <- nrow(Y)
   J <- ncol(Y)
   K <- K_init
+
+  Q <- as.matrix(xi*Y-1)
+  Qc <- Q - sum(Q)/(I*J)
 
   tilde_lambda_0 <- tilde_lambda_0       # Matrix A's spike parameter
   tilde_lambda_1 <- tilde_lambda_1       # Matrix A's slab parameter
@@ -207,13 +158,17 @@ SSLMC <- function(Y, A = NULL, B = NULL, xi = 1,
   B_in <- B
 
   if(method == "svd") {
-    Y_svd = svd(Y)
-    if(length(Y_svd$d)<K_init){
-      A <- Y_svd$u%*%diag(sqrt(Y_svd$d))
-      B <- Y_svd$v%*%diag(sqrt(Y_svd$d))
-    } else{
-      A <- Y_svd$u[,1:K_init]%*%diag(sqrt(Y_svd$d[1:K_init]))
-      B <- Y_svd$v[,1:K_init]%*%diag(sqrt(Y_svd$d[1:K_init]))
+    Q_svd = svd(Qc)
+    if(length(Q_svd$d)<K_init){
+      A <- Q_svd$u%*%diag(sqrt(Q_svd$d))
+      B <- Q_svd$v%*%diag(sqrt(Q_svd$d))
+      # A <- Q_svd$u
+      # B <- Q_svd$v
+    } else {
+      A <- Q_svd$u[,1:K_init]%*%diag(sqrt(Q_svd$d[1:K_init]))
+      B <- Q_svd$v[,1:K_init]%*%diag(sqrt(Q_svd$d[1:K_init]))
+      # A <- Q_svd$u[,1:K_init]
+      # B <- Q_svd$v[,1:K_init]
     }
     if(!is.null(A_in)) A <- A_in
     if(!is.null(B_in)) B <- B_in
@@ -232,19 +187,17 @@ SSLMC <- function(Y, A = NULL, B = NULL, xi = 1,
   
   # monitor the log likelihood
   logLikelihood_old <- get_logLikelihood(
-    Y = Y, 
-    xi = xi, 
+    Q = Q, 
     A = A, 
     B = B, 
     tilde_thetas = tilde_thetas, 
     thetas = thetas, 
-    tilde_lambdas = tilde_thetas, 
+    tilde_lambdas = tilde_lambdas, 
     lambdas = lambdas, 
     tilde_alpha = tilde_alpha, 
     tilde_beta = tilde_beta, 
     alpha = alpha, 
     beta = beta)
-
   delta_logLikelihood_old <- 1000
   delta_logLikelihood_save = c()
   logLikelihood_save = c()
@@ -254,7 +207,7 @@ SSLMC <- function(Y, A = NULL, B = NULL, xi = 1,
   B_lag <- B
 
   for (i in 1:max_iter) {
-    cat("Iteration: ", i, "\n")
+    # cat("Iteration: ", i, "\n")
 
     if(i == 1){
       A <- A
@@ -266,8 +219,7 @@ SSLMC <- function(Y, A = NULL, B = NULL, xi = 1,
       B_lag <- B
       
       proximals <- get_proximal(
-          Y = Y,
-          xi = xi,
+          Q = Q,
           eta = eta,
           A = A_momentum,
           B = B_momentum,
@@ -290,7 +242,7 @@ SSLMC <- function(Y, A = NULL, B = NULL, xi = 1,
     counts = A_sparse$counts+B_sparse$counts
     tilde_thetas <- A_sparse$thetas
     thetas <- B_sparse$thetas
-    cat("Thetas update finished.","\n")
+    # cat("Thetas update finished.","\n")
     
     # Get the change of probability with one cluster leave out
     overall_prob = get_logit(A%*%t(B))
@@ -308,7 +260,7 @@ SSLMC <- function(Y, A = NULL, B = NULL, xi = 1,
       B_lag    = B_lag[,re_order]
       tilde_thetas = tilde_thetas[re_order]
       thetas = thetas[re_order]
-      cat("AB update finished.","\n")
+      # cat("AB update finished.","\n")
       
     } else {
       re_order = order(bicluster_prob, decreasing = TRUE)
@@ -318,7 +270,7 @@ SSLMC <- function(Y, A = NULL, B = NULL, xi = 1,
       B_lag    = B_lag[,re_order]
       tilde_thetas = tilde_thetas[re_order]
       thetas = thetas[re_order]
-      cat("AB update finished.","\n")
+      # cat("AB update finished.","\n")
     }
     
     # remove all zero columns 
@@ -327,7 +279,7 @@ SSLMC <- function(Y, A = NULL, B = NULL, xi = 1,
     keep = colSums(A==0) < I & colSums(B==0) < J
     # cat(sort(bicluster_prob,decreasing = TRUE), "\n")
     K = sum(keep)
-    cat("K =", K, "\n")
+    # cat("K =", K, "\n")
     if(K <= 2){
       break
     }
@@ -353,157 +305,122 @@ SSLMC <- function(Y, A = NULL, B = NULL, xi = 1,
       )
     }
 
-    # stop earlier by log likelihood 
-    logLikelihood <- get_logLikelihood(
-      Y = Y, 
-      xi = xi, 
-      A = A, 
-      B = B, 
-      tilde_thetas = tilde_thetas, 
-      thetas = thetas, 
-      tilde_lambdas = tilde_thetas, 
-      lambdas = lambdas, 
-      tilde_alpha = tilde_alpha, 
-      tilde_beta = tilde_beta, 
-      alpha = alpha, 
-      beta = beta)
-    
-    if(is.finite(abs(logLikelihood - logLikelihood_old) / abs(logLikelihood_old))){
-      delta_logLikelihood <- abs(logLikelihood - logLikelihood_old) / abs(logLikelihood_old)
+    # Stop earlier by log likelihood 
+    if(i > 1){
       
-      if (delta_logLikelihood < tol) {
-        break
+      logLikelihood <- get_logLikelihood(
+        Q = Q, 
+        A = A, 
+        B = B, 
+        tilde_thetas = tilde_thetas, 
+        thetas = thetas, 
+        tilde_lambdas = tilde_lambdas, 
+        lambdas = lambdas, 
+        tilde_alpha = tilde_alpha, 
+        tilde_beta = tilde_beta, 
+        alpha = alpha, 
+        beta = beta)
+
+      if(is.finite(abs(logLikelihood - logLikelihood_old) / abs(logLikelihood_old))){
+        delta_logLikelihood <- abs(logLikelihood - logLikelihood_old) / abs(logLikelihood_old)
+
+        logLikelihood_old <- logLikelihood
+        delta_logLikelihood_old <- delta_logLikelihood
+      
+        delta_logLikelihood_save = c(delta_logLikelihood_save, delta_logLikelihood_old)
+        logLikelihood_save = c(logLikelihood_save, logLikelihood_old)
+
+        if (delta_logLikelihood < tol) break
       }
-      # if ((i > 100) & (delta_logLikelihood > delta_logLikelihood_old)) {
-      #   break
-      # }
-    }
+      
+    } # End the earlier termination
     
-    logLikelihood_old <- logLikelihood
-    delta_logLikelihood_old <- delta_logLikelihood
-    
-    delta_logLikelihood_save = c(delta_logLikelihood_save, delta_logLikelihood_old)
-    logLikelihood_save = c(logLikelihood_save, logLikelihood_old)
-    
-  }
+  } # End of the main iterations 
   
-  out <- list(A = A, B = B, tilde_thetas = tilde_thetas, thetas = thetas, counts = sum(counts))
+  out <- list(A = A, B = B, tilde_thetas = tilde_thetas, thetas = thetas, counts = sum(counts), BIC = min(logLikelihood_save))
   
-  if(show_plot == TRUE) plot(logLikelihood_save)
+  plot(1:length(logLikelihood_save),logLikelihood_save,type = ifelse(length(logLikelihood_save)==1,"o","l"),
+        # xlim = c(0,max_iter),
+        xlab = "Iterations",ylab = "BIC")
 
   return(out)
 }
 
 
-
-SSLMC_ladder <- function(Y, U = NULL, V = NULL, xi = 1, 
-                         tilde_lambda0s, tilde_lambda1,
-                         lambda0s, lambda1,
+SSLMC_ladder <- function(Y, xi = 2, A = NULL, B = NULL, 
+                         tilde_lambda_0s, tilde_lambda_1,
+                         lambda_0s, lambda_1, method = "svd",
                          tilde_alpha = 1, tilde_beta = 1, alpha = 1, beta = 1, 
-                         K_init = 50, thisSeed = 123, eta = 0.001, IBP = 1, 
+                         K_init = 30, thisSeed = 123, eta = 0.001, IBP = 1, 
                          tol = 1e-10, max_iter = 100, show_plot = FALSE){
   
-  L = length(lambda0s)
-  update_tilde_lambda0 = 1
+  L = length(lambda_0s)
   counts = rep(0,L)
-  tilde_lambda0 = tilde_lambda0s[1]
-  lambda0 = lambda0s[1]
+  BIC = rep(0,L)
+  update_tilde_lambda_0 = 1
+  update_lambda_0 = 1
+  tilde_lambda_0 = tilde_lambda_0s[1]
+  lambda_0 = lambda_0s[1]
   
   for (l in 1:L) {
     print(glue::glue('Ladder {l}: 
-    tilde_lambdas = ({tilde_lambda0},{tilde_lambda1}) 
-    lambdas = ({lambda0},{lambda1}) \n'))
+    tilde_lambdas = ({tilde_lambda_0},{tilde_lambda_1}) 
+    lambdas = ({lambda_0},{lambda_1}) \n'))
     
     if(l == 1) {
-      A = NULL
-      B = NULL 
+      A = A
+      B = B
       K_init = K_init
       this_SSLMC <- SSLMC(A = A, B = B, 
-                          Y = Y, U = U, V = V, xi = xi, 
-                          tilde_lambdas = c(tilde_lambda0, tilde_lambda1),
-                          lambdas = c(lambda0, lambda1),
+                          Y = Y, xi = xi, 
+                          tilde_lambda_0 = tilde_lambda_0, tilde_lambda_1 = tilde_lambda_1,
+                          lambda_0 = lambda_0, lambda_1 = lambda_1,
                           tilde_alpha = tilde_alpha, tilde_beta = tilde_beta, alpha = alpha, beta = beta, 
-                          K_init = K_init,
+                          K_init = K_init, method = method,
                           thisSeed = thisSeed, eta = eta, tol = tol, IBP = IBP, 
                           max_iter = max_iter, show_plot = show_plot)
       counts[1] = this_SSLMC$counts
+      BIC[1] = this_SSLMC$BIC
+      print(glue::glue('K = {ncol(this_SSLMC$A)} and counts = {this_SSLMC$counts} \n'))
       
     } else {
       A = this_SSLMC$A
       B = this_SSLMC$B
       K_init = ncol(A)
-      if(update_tilde_lambda0){
-        tilde_lambda0 = tilde_lambda0s[l]
+      # A = A
+      # B = B
+      # K_init = K_init
+      if(update_tilde_lambda_0 == 1){
+        tilde_lambda_0 = tilde_lambda_0s[l]
       }
-      lambda0 = lambda0s[l]
+      if(update_lambda_0 == 1){
+        lambda_0 = lambda_0s[l]
+      }
       
       this_SSLMC <- SSLMC(A = A, B = B, 
-                          Y = Y, U = U, V = V, xi = xi, 
-                          tilde_lambdas = c(tilde_lambda0, tilde_lambda1),
-                          lambdas = c(lambda0, lambda1),
+                          Y = Y, xi = xi, 
+                          tilde_lambda_0 = tilde_lambda_0, tilde_lambda_1 = tilde_lambda_1,
+                          lambda_0 = lambda_0, lambda_1 = lambda_1,
                           tilde_alpha = tilde_alpha, tilde_beta = tilde_beta, alpha = alpha, beta = beta, 
-                          K_init = K_init,
+                          K_init = K_init, method = method,
                           thisSeed = thisSeed, eta = eta, tol = tol, IBP = IBP, 
                           max_iter = max_iter, show_plot = show_plot)
       counts[l] = this_SSLMC$counts
+      BIC[l] = this_SSLMC$BIC
       if(counts[l]>counts[l-1]){
-        tilde_lambda0 = tilde_lambda0s[l-1]
-        update_tilde_lambda0 = 0
+        tilde_lambda_0 = tilde_lambda_0s[l-1]
+        update_tilde_lambda_0 = 0
+        lambda_0 = lambda_0s[l-1]
+        update_lambda_0 = 0
       }
+
+      print(glue::glue('K = {ncol(this_SSLMC$A)} and counts = {this_SSLMC$counts} \n'))
+
     }
   }
   
-  out <- list(A = this_SSLMC$A, B = this_SSLMC$B, tilde_thetas = this_SSLMC$tilde_thetas, thetas = this_SSLMC$thetas)
+  out <- list(A = this_SSLMC$A, B = this_SSLMC$B, tilde_thetas = this_SSLMC$tilde_thetas, thetas = this_SSLMC$thetas, BIC = BIC)
   return(out)
 }
 
-
-
-# This is a simulation setting adjusted from Lee_Huang_2014_A_biclustering algorithm for binary matrices based on penalized Bernoulli likelihood.
-my_levelplot <- function(mat, 
-                         main="Binary Matrix Plot", 
-                         xlab = "X", 
-                         ylab = "Y", 
-                         col.regions=c("white", "black"), 
-                         colorkey = TRUE, 
-                         aspect="fill", 
-                         cuts = 1, 
-                         at=c(0, 0.5, 1)){
-
-  levelplot(t(apply(mat, 2, rev)),
-      main = main,
-      xlab = xlab,
-      ylab = ylab,
-      col.regions = col.regions,
-      colorkey = colorkey,
-      aspect=aspect,
-      cuts=cuts,
-      at=at)
-
-}
-
-
-sim_data <- function(I=120,J=300,p=0.4,row1=0.3,col1=0.4,p1=0.95,row0=0.4,col0=0.5,p0=0.05,seed,...){
-  require(lattice)
-  set.seed(seed)
-  p = p 
-  I = I
-  J = J
-  mat = matrix(rbinom(I*J,size=1,prob=p), nrow = I, ncol = J)
-  p1 = p1
-  I1 = as.integer(I*row1)
-  J1 = as.integer(J*col1)
-  mat1 = matrix(rbinom(I1*J1,size=1,prob=p1), nrow = I1, ncol = J1)
-  p0 = p0
-  I0 = as.integer(I*row0)
-  J0 = as.integer(J*col0)
-  mat0 = matrix(rbinom(I0*J0,size=1,prob=p0), nrow = I0, ncol = J0)
-  
-  mat[(I-I1+1):I,1:J1] = mat1
-  mat[1:I0,(J-J0+1):J] = mat0
-
-  my_levelplot(mat,...)
-  return(mat)
-  
-}
 
