@@ -46,73 +46,81 @@ out = SSLMC(Y = Y,
 
 This method is proposed by: 
 
-```bibtex
-@article{liu2016neighborhood,
-  title={Neighborhood regularized logistic matrix factorization for drug-target interaction prediction},
-  author={Liu, Yong and Wu, Min and Miao, Chunyan and Zhao, Peilin and Li, Xiao-Li},
-  journal={PLoS computational biology},
-  volume={12},
-  number={2},
-  pages={e1004760},
-  year={2016},
-  publisher={Public Library of Science San Francisco, CA USA}
-}
-```
+Liu, Y., Wu, M., Miao, C., Zhao, P., & Li, X. L. (2016). Neighborhood regularized logistic matrix factorization for drug-target interaction prediction. PLoS computational biology, 12(2), e1004760.
 
 Their orginal codes are available at: [PyDTI](https://github.com/stephenliu0423/PyDTI). If you are using python 3 or more recent python versions, you will need to modify these codes or you can directly use my updated codes [here](). 
 
 ```bash
-# Install python for a specific project 
-
-# brew install python
-
-# which python3
-
-# echo $PATH | grep --color=auto "$(pyenv root)/shims"
-
-# pyenv virtualenv 3.13.0 my_env
-
-
-#--------------------------------------#
-#--------------- PyDTI ----------------#
-#--------------------------------------#
-# This is the orginal codes written in python 2.7.9
-
-# I used conda to manage the environment (because pyenv cannot fully install the old python in Macbook M chip): 
-# conda env create -n PyDTI_conda python=2.7.13
-# conda env create -f environment.yaml
-# conda activate PyDTI_conda
-# conda deactivate
-# conda env remove --n PyDTI_conda
-# conda install -c conda-forge numpy scipy
-
-python PyDTI.py --method="nrlmf" --dataset="nr" --predict-num=1 --data-dir="./datasets" --output-dir="./outputs"
-
-python sat_analysis.py
-
-python PyDTI.py --method="nrlmf" --dataset="nr" --cvs=1 --specify-arg=0 --data-dir='./datasets'
-
-python PyDTI.py --method="nrlmf" --dataset="nr" --cvs=1 --specify-arg=1 --method-opt="c=5 K1=5 K2=5 r=100 lambda_d=0.125 lambda_t=0.125 alpha=0.25 beta=0.125 theta=0.5" --data-dir="./datasets"
-
 #--------------------------------------#
 #--------------- PyDTI3 ---------------#
 #--------------------------------------#
 # This is the compatible codes for python 3.13.0
 
 # I used pyenv to manage the environment: 
-# pyenv activate PyDTI_venv
-# pyenv deactivate
-# pyenv uninstall PyDTI_env
+pyenv activate PyDTI_venv
+pyenv deactivate
+pyenv uninstall PyDTI_env
 
-# running codes are similar
-
-
+# Running codes are similar, for example: 
 python PyDTI.py --method="nrlmf" --dataset="simulation" --predict-num=1 --data-dir="./datasets" --output-dir="./outputs"
 
 ```
 
 
+Once you setup the python environment, you can directly call this function without leaving R. Below is my pipeline to directly run the codes from R console:
 
+```r
+# Load in the python environment
+library(glue) # useful package to combine strings
+library(reticulate)
+Sys.setenv(RETICULATE_PYTHON = "~/.pyenv/versions/PyDTI_venv/bin/python") # your python path
+use_virtualenv("~/.pyenv/versions/3.13.0/envs/PyDTI_venv", required = TRUE) # your virtual environment path
+py_config() # configure the above settings
+
+
+# Define path of your working space:
+python_dir <- glue("{local_path}/codes/PyDTI3/PyDTI.py")
+data_dir <- glue("{db_path}/{isTune}/datasets")
+output_dir <- glue("{db_path}/{isTune}/outputs/PyDTI")
+# Create the directories if they don't exist
+if (!dir.exists(data_dir)) {
+  dir.create(data_dir, recursive = TRUE)
+  message("Created directory: ", data_dir)
+}
+
+if (!dir.exists(output_dir)) {
+  dir.create(output_dir, recursive = TRUE)
+  message("Created directory: ", output_dir)
+}
+
+
+# Construct the python command
+python_command <- glue(
+  "python {python_dir} ",
+  "--method='nrlmf' ",
+  "--dataset='{db}' ",
+  "--predict-num=1 ",
+  "--data-dir='{data_dir}' ",
+  "--method-opt='c={cc2} K1={K1} K2={K2} r={numLat}' ",
+  "--output-dir='{output_dir}'"
+)
+
+
+# Modify the file names just for this algorithm: (matched with the name rules in PyDTI.py)
+write.table(Y, file = glue("{data_dir}/{db}_admat_dgc.txt"), sep = "\t", row.names = FALSE, col.names = FALSE)
+write.table(simD, file = glue("{data_dir}/{db}_simmat_dc.txt"), sep = "\t", row.names = FALSE, col.names = FALSE)
+write.table(simT, file = glue("{data_dir}/{db}_simmat_dg.txt"), sep = "\t", row.names = FALSE, col.names = FALSE)
+
+
+# Execute the python code: 
+system(python_command)
+
+
+# Extract what you will need for downstream analysis: 
+A_out <- as.matrix(read.table(glue("{output_dir}/U.txt")))
+B_out <- as.matrix(read.table(glue("{output_dir}/V.txt")))
+K_out <- ncol(B_out)
+```
 
 
 
