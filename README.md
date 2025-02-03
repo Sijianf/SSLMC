@@ -2,8 +2,8 @@
 
 
 ## Table of Contents
-- [Tutorial of SSLMC](#tutorial-of-sslmc)
-- [Competing methods-NRLMF](#nrlmf)
+- [Tutorial of SSLMC](#1.-Tutorial-of-SSLMC)
+- [Competing methods-NRLMF](#2.1.-nrlmf)
 
 
 ## 1. Tutorial of SSLMC
