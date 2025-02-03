@@ -14,9 +14,9 @@ The **Spike and Slab Lasso Matrix Completion (SSLMC)** algorithm is designed for
 ---
 
 ## 1️⃣ **Tutorial of SSLMC**
-The [`main.R`](https://github.com/Sijianf/SSLMC/blob/main/codes/main.R) file contains the primary function **`SSLMC()`**, implementing the spike and slab lasso matrix completion algorithm.
+The [`main.R`](https://github.com/Sijianf/SSLMC/blob/main/codes/SSLMC/main.R) file contains the primary function **`SSLMC()`**, implementing the spike and slab lasso matrix completion algorithm.
 
-Additionally, the [`functions.cpp`](https://github.com/Sijianf/SSLMC/blob/main/codes/functions.cpp) file includes the Rcpp functions used in the main implementation.
+Additionally, the [`functions.cpp`](https://github.com/Sijianf/SSLMC/blob/main/codes/SSLMC/functions.cpp) file includes the Rcpp functions used in the main implementation.
 
 ### 🚀 **Example Usage**
 To run the SSLMC algorithm in **R**, use the following example:
