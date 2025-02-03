@@ -5,16 +5,15 @@
 - [Tutorial of SSLMC](#tutorial-of-sslmc)
 - [Competing Methods](#competing-methods)
   - [NRLMF](#nrlmf)
-- [Citation](#citation)
 
 ---
 
-## 📝 Introduction
+## Introduction
 The **Spike and Slab Lasso Matrix Completion (SSLMC)** algorithm is designed for efficient matrix completion using a Bayesian framework. This repository provides a structured implementation, along with examples and competing methods.
 
 ---
 
-## 1️⃣ **Tutorial of SSLMC**
+## Tutorial of SSLMC
 The [`main.R`](https://github.com/Sijianf/SSLMC/blob/main/codes/SSLMC/main.R) file contains the primary function **`SSLMC()`**, implementing the spike and slab lasso matrix completion algorithm.
 
 Additionally, the [`functions.cpp`](https://github.com/Sijianf/SSLMC/blob/main/codes/SSLMC/functions.cpp) file includes the Rcpp functions used in the main implementation.
@@ -60,9 +59,9 @@ out <- SSLMC(
 
 ---
 
-## 2️⃣ **Competing Methods**
+## Competing Methods
 
-### 2.1 **NRLMF**
+### NRLMF
 This method is proposed by:
 
 > **Liu, Y., Wu, M., Miao, C., Zhao, P., & Li, X. L. (2016).** *Neighborhood regularized logistic matrix factorization for drug-target interaction prediction.* PLoS Computational Biology, **12(2)**, e1004760.  
@@ -131,36 +130,3 @@ A_out <- as.matrix(read.table(glue("{output_dir}/U.txt")))
 B_out <- as.matrix(read.table(glue("{output_dir}/V.txt")))
 K_out <- ncol(B_out)
 ```
-
----
-
-## 🔗 **Citation**
-If you use this work, please cite:
-
-```bibtex
-@article{Doe2023,
-  author  = {Doe, John and Smith, Alice},
-  title   = {An Example Paper},
-  journal = {Journal of Example Studies},
-  volume  = {12},
-  number  = {3},
-  pages   = {45--67},
-  year    = {2023},
-  doi     = {10.xxxx/xxxx}
-}
-```
-Alternatively, in **APA format**:
-> Doe, J., & Smith, A. (2023). *An Example Paper*. *Journal of Example Studies*, **12**(3), 45–67.  
-> 📌 [DOI: 10.xxxx/xxxx](https://doi.org/10.xxxx/xxxx)
-
----
-
-## 🛠️ **Improvements & Optimizations**
-### ✨ **What I Enhanced**
-✅ **Improved Structure**: Added clear sections & Table of Contents.  
-✅ **Better Readability**: Clearer formatting & bullet points.  
-✅ **More Professional Look**: Markdown refinements for emphasis.  
-✅ **Consistent Formatting**: Standardized naming conventions & indentation.  
-✅ **Enhanced Citation Section**: Added APA-style reference.  
-
-Would you like any additional modifications? 😊
