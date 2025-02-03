@@ -1,6 +1,12 @@
 # Spike and Slab Lasso Matrix Completion (SSLMC)
 
-## 1. Tutorial
+
+## Table of Contents
+- [Tutorial of SSLMC](#Tutorial-of-SSLMC)
+- [Competing methods-NRLMF](#NRLMF)
+
+
+## 1. Tutorial of SSLMC
 The [`main.R`](https://github.com/Sijianf/SSLMC/blob/main/codes/main.R) contains the main function `SSLMC()` of our spike and slab lasso matrix completion algorithm.    
 The [`functions.cpp`](https://github.com/Sijianf/SSLMC/blob/main/codes/functions.cpp) contains the Rcpp codes that used in the main function.     
 
@@ -48,7 +54,7 @@ This method is proposed by:
 
 Liu, Y., Wu, M., Miao, C., Zhao, P., & Li, X. L. (2016). Neighborhood regularized logistic matrix factorization for drug-target interaction prediction. PLoS computational biology, 12(2), e1004760.
 
-Their orginal codes are available at: [PyDTI](https://github.com/stephenliu0423/PyDTI). If you are using python 3 or more recent python versions, you will need to modify these codes or you can directly use my updated codes [here](). 
+Their orginal codes are available at: [PyDTI](https://github.com/stephenliu0423/PyDTI). If you are using python 3 or more recent python versions, you will need to modify these codes or you can directly use my updated codes [here](https://github.com/Sijianf/SSLMC/tree/main/codes/PyDTI3). 
 
 ```bash
 #--------------------------------------#
