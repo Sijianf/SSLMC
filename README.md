@@ -5,6 +5,7 @@
 - [Tutorial of SSLMC](#tutorial-of-sslmc)
 - [Competing Methods](#competing-methods)
   - [NRLMF](#nrlmf)
+- [Citation](#citation)
 
 ---
 
