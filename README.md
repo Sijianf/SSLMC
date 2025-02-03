@@ -40,7 +40,7 @@ out = SSLMC(Y = Y,
 - `xi`: The confidence level for the observed values, use positive integers like $1,2,3,\cdots,10$ for a better performance.  
 
 
-## 2. ## Competing methods
+## 2. Competing methods
 
 ### 2.1 NRLMF
 
